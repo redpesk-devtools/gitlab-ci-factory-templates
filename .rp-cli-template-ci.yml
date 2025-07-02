@@ -34,3 +34,14 @@
 .rp-cli-start-test:
   script:
     - rp-cli applications test "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
+    - mkdir -p redtest-logs
+    - rp-cli applications tests logs "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
+  artifacts:
+    paths:
+      - redtest-logs/coverage.xml
+      - redtest-logs/tests.tap
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: redtest-logs/coverage.xml
+  coverage: '/Total:\|(\d+\.?\d+\%)/'
