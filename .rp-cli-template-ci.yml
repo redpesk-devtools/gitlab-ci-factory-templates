@@ -10,16 +10,38 @@
 #    - https://docs.gitlab.com/ee/ci/yaml/includes.html#use-default-configuration-from-an-included-configuration-file
 #
 
+  
+
 .rp-cli-build:
   script:
-    - dnf install -y https://download.redpesk.bzh/redpesk-ci/armel-update/tools/AlmaLinux_9/x86_64/redpesk-cli-3.20.1-60.8.x86_64.rpm
+    - dnf install -y https://download.redpesk.bzh/redpesk-ci/armel-update/tools/AlmaLinux_9/x86_64/redpesk-cli-3.21.2-67.1.x86_64.rpm
     - rp-cli connections add "${RP_REMOTE_FACTORY_NAME}" -t "${RP_REMOTE_FACTORY_TOKEN}" -u "${RP_REMOTE_FACTORY_URL}"
     - rp-cli connections use "${RP_REMOTE_FACTORY_NAME}"
 
-    - rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
+    - |
+      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" ]; then
+        SELECTED_BRANCH="$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+      else
+        SELECTED_BRANCH="$CI_DEFAULT_BRANCH"
+      fi
+
+      rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
+
     - rp-cli applications build "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
 
 
-.rp-cli-test:
+
+.rp-cli-start-test:
   script:
     - rp-cli applications test "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
+    - mkdir -p redtest-logs
+    - rp-cli applications tests logs "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
+  artifacts:
+    paths:
+      - redtest-logs/coverage.xml
+      - redtest-logs/tests.tap
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: redtest-logs/coverage.xml
+  coverage: '/Total:\|(\d+\.?\d+\%)/'
