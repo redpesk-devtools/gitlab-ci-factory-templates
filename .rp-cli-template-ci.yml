@@ -14,7 +14,7 @@
 
 .rp-cli-build:
   script:
-    - dnf install -y https://download.redpesk.bzh/redpesk-ci/armel-update/tools/AlmaLinux_9/x86_64/redpesk-cli-3.20.1-60.8.x86_64.rpm
+    - dnf install -y https://download.redpesk.bzh/redpesk-ci/armel-update/tools/AlmaLinux_9/x86_64/redpesk-cli-3.21.2-67.1.x86_64.rpm
     - rp-cli connections add "${RP_REMOTE_FACTORY_NAME}" -t "${RP_REMOTE_FACTORY_TOKEN}" -u "${RP_REMOTE_FACTORY_URL}"
     - rp-cli connections use "${RP_REMOTE_FACTORY_NAME}"
 
