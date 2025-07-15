@@ -10,16 +10,22 @@
 #    - https://docs.gitlab.com/ee/ci/yaml/includes.html#use-default-configuration-from-an-included-configuration-file
 #
 
-  
-.rp-cli-install:
-  script:
-    - wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh | bash -s -- --rp-cli
+# Set-up the different variables needed by the pipeline
+variables:
+    RP_INSTALL_RPCLI_URL: "https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh"
 
-.rp-cli-build:
-  script:
+default:
+  # Define the "before script" to use by default
+  before_script:
+    # Install rpcli and setup connection
+    - command -v rp-cli 2>/dev/null 2>&1 || wget -O - "$RP_INSTALL_RPCLI_URL" | bash -s -- --rp-cli --no-recommends
     - rp-cli connections add "${RP_REMOTE_FACTORY_NAME}" -t "${RP_REMOTE_FACTORY_TOKEN}" -u "${RP_REMOTE_FACTORY_URL}"
     - rp-cli connections use "${RP_REMOTE_FACTORY_NAME}"
 
+# Start build app
+.rp-cli-build:
+  script:
+    - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
     - |
       if [ -n "$CI_COMMIT_BRANCH" ]; then
         SELECTED_BRANCH="$CI_COMMIT_BRANCH"
@@ -29,19 +35,18 @@
         SELECTED_BRANCH="$CI_DEFAULT_BRANCH"
       fi
       echo "Selected branch is: $SELECTED_BRANCH"
-
     - rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
     - rp-cli applications build "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
 
 
-
-
+# Start test app
 .rp-cli-start-test:
   script:
+    - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
     - rp-cli applications test "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
     - mkdir -p redtest-logs
     - rp-cli applications tests logs "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
-    - cat redtest-logs/*/*/console.log 
+    - cat redtest-logs/*/*/console.log
   artifacts:
     paths:
       - redtest-logs/**
