@@ -11,23 +11,28 @@
 #
 
   
+.rp-cli-install:
+  script:
+    - wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh | bash -s -- --rp-cli
 
 .rp-cli-build:
   script:
-    - dnf install -y https://download.redpesk.bzh/redpesk-ci/armel-update/tools/AlmaLinux_9/x86_64/redpesk-cli-3.21.2-67.1.x86_64.rpm
     - rp-cli connections add "${RP_REMOTE_FACTORY_NAME}" -t "${RP_REMOTE_FACTORY_TOKEN}" -u "${RP_REMOTE_FACTORY_URL}"
     - rp-cli connections use "${RP_REMOTE_FACTORY_NAME}"
 
     - |
-      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" ]; then
+      if [ -n "$CI_COMMIT_BRANCH" ]; then
+        SELECTED_BRANCH="$CI_COMMIT_BRANCH"
+      elif [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
         SELECTED_BRANCH="$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
       else
         SELECTED_BRANCH="$CI_DEFAULT_BRANCH"
       fi
+      echo "Selected branch is: $SELECTED_BRANCH"
 
-      rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
-
+    - rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
     - rp-cli applications build "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
+
 
 
 
@@ -36,12 +41,12 @@
     - rp-cli applications test "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
     - mkdir -p redtest-logs
     - rp-cli applications tests logs "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
+    - cat redtest-logs/*/*/console.log 
   artifacts:
     paths:
-      - redtest-logs/coverage.xml
-      - redtest-logs/tests.tap
+      - redtest-logs/**
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: redtest-logs/coverage.xml
+        path: redtest-logs/**/coverage.xml
   coverage: '/Total:\|(\d+\.?\d+\%)/'
