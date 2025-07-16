@@ -27,6 +27,7 @@ default:
   script:
     - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
     - |
+      # Select the branch
       if [ -n "$CI_COMMIT_BRANCH" ]; then
         SELECTED_BRANCH="$CI_COMMIT_BRANCH"
       elif [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
@@ -35,17 +36,32 @@ default:
         SELECTED_BRANCH="$CI_DEFAULT_BRANCH"
       fi
       echo "Selected branch is: $SELECTED_BRANCH"
-    - rp-cli applications update "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
-    - rp-cli applications build "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
 
+      # Use RP_REMOTE_FACTORY_APP if set, else fallback to GitLab repo name
+      if [ -n "$RP_REMOTE_FACTORY_APP" ]; then
+        APP_NAME="$RP_REMOTE_FACTORY_APP"
+      else
+        APP_NAME="$CI_PROJECT_NAME"
+      fi
+      echo "Using application name: $APP_NAME"
+    - rp-cli applications update "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --source-rev "$SELECTED_BRANCH"
+    - rp-cli applications build "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}"
 
 # Start test app
 .rp-cli-start-test:
   script:
     - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
-    - rp-cli applications test "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}"
+    - |
+      if [ -n "$RP_REMOTE_FACTORY_APP" ]; then
+        APP_NAME="$RP_REMOTE_FACTORY_APP"
+      else
+        APP_NAME="$CI_PROJECT_NAME"
+      fi
+      echo "Using application name: $APP_NAME"
+
+    - rp-cli applications test "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}"
     - mkdir -p redtest-logs
-    - rp-cli applications tests logs "${RP_REMOTE_FACTORY_APP}" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
+    - rp-cli applications tests logs "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
     - cat redtest-logs/*/*/console.log
   artifacts:
     paths:
@@ -55,3 +71,4 @@ default:
         coverage_format: cobertura
         path: redtest-logs/**/coverage.xml
   coverage: '/Total:\|(\d+\.?\d+\%)/'
+
