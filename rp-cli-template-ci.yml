@@ -25,7 +25,15 @@ default:
 # Start build app
 .rp-cli-build:
   script:
-    - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
+    - '[ -n "$RP_DEBUG" ] && { set -x; rpcli connections current; }'
+    - | 
+      if [ -n "$RP_VERBOSE" ]; then
+        echo "Variables status:"
+        echo "RP_REMOTE_FACTORY_NAME:     ${RP_REMOTE_FACTORY_NAME}"
+        echo "RP_REMOTE_FACTORY_URL:      ${RP_REMOTE_FACTORY_URL}"
+        echo "RP_REMOTE_FACTORY_PROJECT:  ${RP_REMOTE_FACTORY_PROJECT}"
+        echo "RP_REMOTE_FACTORY_APP:      ${RP_REMOTE_FACTORY_APP}"
+      fi    
     - |
       # Select the branch
       if [ -n "$CI_COMMIT_BRANCH" ]; then
