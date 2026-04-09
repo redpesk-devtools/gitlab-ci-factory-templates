@@ -12,13 +12,13 @@
 
 # Set-up the different variables needed by the pipeline
 variables:
-    RP_INSTALL_RPCLI_URL: "https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh"
+    RP_INSTALL_RPCLI_URL: "https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/refs/heads/master/install-redpesk-cli.sh"
 
 default:
   # Define the "before script" to use by default
   before_script:
     # Install rpcli and setup connection
-    - command -v rp-cli 2>/dev/null 2>&1 || wget -O - "$RP_INSTALL_RPCLI_URL" | bash -s -- --rp-cli --no-recommends
+    - command -v rp-cli 2>/dev/null 2>&1 || curl -s "$RP_INSTALL_RPCLI_URL" | bash -s -- --no-recommends
     - rp-cli connections add "${RP_REMOTE_FACTORY_NAME}" -t "${RP_REMOTE_FACTORY_TOKEN}" -u "${RP_REMOTE_FACTORY_URL}"
     - rp-cli connections use "${RP_REMOTE_FACTORY_NAME}"
 
@@ -26,14 +26,14 @@ default:
 .rp-cli-build:
   script:
     - '[ -n "$RP_DEBUG" ] && { set -x; rpcli connections current; }'
-    - | 
+    - |
       if [ -n "$RP_VERBOSE" ]; then
         echo "Variables status:"
         echo "RP_REMOTE_FACTORY_NAME:     ${RP_REMOTE_FACTORY_NAME}"
         echo "RP_REMOTE_FACTORY_URL:      ${RP_REMOTE_FACTORY_URL}"
         echo "RP_REMOTE_FACTORY_PROJECT:  ${RP_REMOTE_FACTORY_PROJECT}"
         echo "RP_REMOTE_FACTORY_APP:      ${RP_REMOTE_FACTORY_APP}"
-      fi    
+      fi
     - |
       # Select the branch
       if [ -n "$CI_COMMIT_BRANCH" ]; then
@@ -58,7 +58,15 @@ default:
 # Start test app
 .rp-cli-start-test:
   script:
-    - '[ -n "$RP_VERBOSE" ] && { set -x; rpcli connections current; }'
+    - '[ -n "$RP_DEBUG" ] && { set -x; rpcli connections current; }'
+    - |
+      if [ -n "$RP_VERBOSE" ]; then
+        echo "Variables status:"
+        echo "RP_REMOTE_FACTORY_NAME:     ${RP_REMOTE_FACTORY_NAME}"
+        echo "RP_REMOTE_FACTORY_URL:      ${RP_REMOTE_FACTORY_URL}"
+        echo "RP_REMOTE_FACTORY_PROJECT:  ${RP_REMOTE_FACTORY_PROJECT}"
+        echo "RP_REMOTE_FACTORY_APP:      ${RP_REMOTE_FACTORY_APP}"
+      fi
     - |
       if [ -n "$RP_REMOTE_FACTORY_APP" ]; then
         APP_NAME="$RP_REMOTE_FACTORY_APP"
