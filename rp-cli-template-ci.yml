@@ -13,6 +13,7 @@
 # Set-up the different variables needed by the pipeline
 variables:
     RP_INSTALL_RPCLI_URL: "https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/refs/heads/master/install-redpesk-cli.sh"
+    RP_TEST_DEFAULT_TIMEOUT: 30
 
 default:
   # Define the "before script" to use by default
@@ -60,12 +61,14 @@ default:
   script:
     - '[ -n "$RP_DEBUG" ] && { set -x; rpcli connections current; }'
     - |
+      TEST_TMO=${RP_TEST_TIMEOUT:-${RP_TEST_DEFAULT_TIMEOUT}}
       if [ -n "$RP_VERBOSE" ]; then
         echo "Variables status:"
         echo "RP_REMOTE_FACTORY_NAME:     ${RP_REMOTE_FACTORY_NAME}"
         echo "RP_REMOTE_FACTORY_URL:      ${RP_REMOTE_FACTORY_URL}"
         echo "RP_REMOTE_FACTORY_PROJECT:  ${RP_REMOTE_FACTORY_PROJECT}"
         echo "RP_REMOTE_FACTORY_APP:      ${RP_REMOTE_FACTORY_APP}"
+        echo "RP_TEST_TIMEOUT:            ${TEST_TMO}"
       fi
     - |
       if [ -n "$RP_REMOTE_FACTORY_APP" ]; then
@@ -75,9 +78,9 @@ default:
       fi
       echo "Using application name: $APP_NAME"
 
-    - rp-cli applications test "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}"
+    - rp-cli applications test "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --time-out ${TEST_TMO}
     - mkdir -p redtest-logs
-    - rp-cli applications tests logs "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs  --time-out 30
+    - rp-cli applications tests logs "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
     - cat redtest-logs/*/*/console.log
   artifacts:
     paths:
