@@ -85,9 +85,5 @@ default:
   artifacts:
     paths:
       - redtest-logs/**
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: redtest-logs/**/coverage.xml
-  coverage: '/Total:\|(\d+\.?\d+\%)/'
+  coverage: '/Total coverage:\|(\d+\.?\d+\%)/'
 
