@@ -81,7 +81,7 @@ default:
     - rp-cli applications test "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --time-out ${TEST_TMO}
     - mkdir -p redtest-logs
     - rp-cli applications tests logs "$APP_NAME" --project "${RP_REMOTE_FACTORY_PROJECT}" --force-app --directory redtest-logs
-    - cat redtest-logs/*/*/console.log
+    - cat redtest-logs/console.log
   artifacts:
     paths:
       - redtest-logs/**
